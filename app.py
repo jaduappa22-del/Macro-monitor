@@ -14,9 +14,13 @@ def fetch_market_data():
         "🏷️ 원자재 & 에너지 (Commodities & Energy)": {
             "Gold (금)": "GC=F",
             "Silver (은)": "SI=F",
+            "Palladium (팔라듐)": "PA=F",
+            "Platinum (백금)": "PL=F",
+            "Tin (주석)": "SISI=F",       # 주석 선물 티커
             "Copper (구리)": "HG=F",
             "Crude Oil WTI (WTI 원유)": "CL=F",
             "Crude Oil Brent (브렌트유)": "BZ=F",
+            "Dubai Oil (두바이유)": "DUBA=F",  # 두바이유 티커
             "Natural Gas (천연가스)": "NG=F"
         },
         "🇺🇸 미국 시장 & 국채 (US Markets)": {
@@ -27,16 +31,22 @@ def fetch_market_data():
         },
         "🇰🇷 한국 시장 (Korea Markets)": {
             "KOSPI": "^KS11",
-            "KOSDAQ": "^KQ11"
+            "KOSDAQ": "^KQ11",
+            "Samsung Electronics (삼성전자)": "005930.KS",
+            "SK Hynix (SK하이닉스)": "000660.KS",
+            "LG Electronics (LG전자)": "066570.KS"
         },
         "🪙 크립토 (Crypto)": {
             "Bitcoin (비트코인)": "BTC-USD",
-            "Ethereum (이더리움)": "ETH-USD"
+            "Ethereum (이더리움)": "ETH-USD",
+            "Solana (솔라나)": "SOL-USD",
+            "Sui (수이)": "SUI20947-USD"    # 야후 파이낸스 수이 티커
         },
         "💱 환율 (Foreign Exchange)": {
             "USD/KRW (원/달러)": "KRW=X",
             "JPY/KRW (원/엔)": "JPYKRW=X",
-            "EUR/KRW (원/유로)": "EURKRW=X"
+            "EUR/KRW (원/유로)": "EURKRW=X",
+            "USD/JPY (엔/달러)": "JPY=X"     # 엔달러 환율
         }
     }
     
