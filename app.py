@@ -4,7 +4,7 @@ import streamlit as st
 import yfinance as yf
 
 st.set_page_config(
-    page_title="Global Macro Terminal - Procurement Edition",
+    page_title="Global Macro Terminal - Advanced Procurement",
     page_icon="⚡",
     layout="wide",
 )
@@ -37,12 +37,6 @@ def fetch_market_data():
           "SK Hynix (SK하이닉스)": "000660.KS",
           "LG Electronics (LG전자)": "066570.KS",
       },
-      "🪙 크립토 (Crypto)": {
-          "Bitcoin (비트코인)": "BTC-USD",
-          "Ethereum (이더리움)": "ETH-USD",
-          "Solana (솔라나)": "SOL-USD",
-          "Sui (수이)": "SUI20947-USD",
-      },
       "💱 환율 (Foreign Exchange)": {
           "USD/KRW (원/달러)": "KRW=X",
           "JPY/KRW (원/엔)": "JPYKRW=X",
@@ -52,13 +46,14 @@ def fetch_market_data():
   }
 
   categorized_data = {}
+  summary_flat_list = []
   fx_usd_krw = 0.0
   copper_price = 0.0
 
   for category, tickers in categories.items():
     categorized_data[category] = {}
     for name, ticker in tickers.items():
-      dates, prices, cur, rate = [], [], 0.0, 0.0
+      dates, prices, cur, rate, avg_3m = [], [], 0.0, 0.0, 0.0
       try:
         tk = yf.Ticker(ticker)
         df = tk.history(period="3mo")
@@ -70,8 +65,8 @@ def fetch_market_data():
             cur = prices[-1]
             prev = prices[-2] if len(prices) >= 2 else cur
             rate = ((cur - prev) / prev) * 100 if prev != 0 else 0.0
+            avg_3m = sum(prices) / len(prices) if prices else cur
 
-            # 주요 구매 지표 캐치
             if "USD/KRW" in name:
               fx_usd_krw = cur
             elif "Copper" in name:
@@ -79,51 +74,27 @@ def fetch_market_data():
       except:
         pass
 
-      categorized_data[category][name] = {
+      item_payload = {
+          "name": name,
+          "category": category,
           "current": round(cur, 2),
           "change_rate": round(rate, 2),
+          "avg_3m": round(avg_3m, 2),
           "dates": dates,
           "sparkline": [round(p, 2) for p in prices],
+          "avg_line": [round(avg_3m, 2)] * len(prices),
       }
 
-  return categorized_data, fx_usd_krw, copper_price
+      categorized_data[category][name] = item_payload
+      summary_flat_list.append(item_payload)
+
+  return categorized_data, summary_flat_list, fx_usd_krw, copper_price
 
 
-market_data, fx_val, copper_val = fetch_market_data()
+market_data, summary_list, fx_val, copper_val = fetch_market_data()
 update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S KST")
 data_json = json.dumps(market_data)
-
-# 구매/교섭팀을 위한 실시간 인사이트 로직 생성
-procurement_advice = []
-if fx_val > 0:
-  if fx_val >= 1350:
-    procurement_advice.append({
-        "type": "danger",
-        "title": f"원/달러 환율 경보 ({fx_val:,.2f}원)",
-        "desc": (
-            " 수입 원가 상승 압박이 큽니다. 외화 결제 건은 네고 타이밍을"
-            " 조율하거나 환헤지 전략을 검토하세요."
-        ),
-    })
-  else:
-    procurement_advice.append({
-        "type": "safe",
-        "title": f"원/달러 환율 안정권 ({fx_val:,.2f}원)",
-        "desc": (
-            " 기준선(1,350원) 아래에서 안정세를 보이고 있어 수입 대금 결제에"
-            " 유리한 국면입니다."
-        ),
-    })
-
-if copper_val > 0:
-  procurement_advice.append({
-        "type": "info",
-        "title": f"닥터 코퍼(구리) 시세 동향 ({copper_val:,.2f})",
-        "desc": (
-            " 전선·부품 소재 공급사와의 단가 인상/인하 교섭 시 원자재 추이"
-            " 근거 자료로 활용하십시오."
-        ),
-    })
+summary_json = json.dumps(summary_list)
 
 html_template = f"""
 <!DOCTYPE html>
@@ -136,8 +107,8 @@ html_template = f"""
 <body class="bg-gray-950 text-gray-100 font-mono antialiased p-6 min-h-screen">
     <header class="flex justify-between items-center border-b border-gray-800 pb-4 mb-6">
         <div>
-            <h1 class="text-2xl font-black tracking-wider text-emerald-400">⚡ GLOBAL MACRO TERMINAL</h1>
-            <p class="text-xs text-gray-400 mt-1">Procurement & Economic Intelligence Desk</p>
+            <h1 class="text-2xl font-black tracking-wider text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
+            <p class="text-xs text-gray-400 mt-1">Advanced Procurement & Negotiation Analytics Desk</p>
         </div>
         <div class="text-right">
             <span class="px-2.5 py-1 bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs rounded font-bold">LIVE SYSTEM</span>
@@ -145,28 +116,62 @@ html_template = f"""
         </div>
     </header>
 
-    <!-- [신규 추가] 자재구매팀 교섭 전략 및 원가 리스크 인사이트 패널 -->
+    <!-- [1] 실무 교섭 전략 및 자동 인사이트 매트릭스 -->
     <div class="mb-8 bg-gray-900 border border-emerald-500/30 rounded-xl p-4 shadow-xl">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-3">
-            <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🎯 Procurement Negotiation & Cost Action Matrix</h2>
-            <span class="text-[10px] text-gray-400">구매 교섭 실무 가이드</span>
+            <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🎯 AI Procurement & Negotiation Insight Engine</h2>
+            <span class="text-[10px] text-gray-400">3개월 평균선 기준 원가 리스크 자동 분석</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gray-950/60 border border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-amber-400">💡 환율 기반 결제 전략</span>
-                <p class="text-xs text-gray-300 mt-1">현재 환율({fx_val:,.2f}원) 변동성에 따른 수입 부품 및 원자재 발주 시기 분산 검토 필요.</p>
+                <span class="text-xs font-bold text-amber-400">💱 환율 리스크 (USD/KRW)</span>
+                <p class="text-xs text-gray-300 mt-1">현재 환율: <b>{fx_val:,.2f}원</b>. { "1,350원 상회로 수입단가 상승 압박. 네고 분산 필요" if fx_val >= 1350 else "1,350원 하회로 안정 국면. 대금 결제 유리" }</p>
             </div>
             <div class="bg-gray-950/60 border border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-sky-400">🛡️ 공급사 단가 인상 방어 논리</span>
-                <p class="text-xs text-gray-300 mt-1">원자재(금속·에너지) 스파크라인 트렌드를 바탕으로 공급사의 부당한 인상 요구에 대한 객관적 방어선 구축.</p>
+                <span class="text-xs font-bold text-sky-400">🛠️ 원자재 닥터코퍼 (Copper)</span>
+                <p class="text-xs text-gray-300 mt-1">현재가: <b>{copper_val:,.2f}</b>. 제조업 부품 및 전선류 공급사 단가 인상 요구 시 3개월 평균선 비교 방어 논리 제공.</p>
+            </div>
+            <div class="bg-gray-950/60 border border-gray-800 p-3 rounded-lg">
+                <span class="text-xs font-bold text-emerald-400">📈 차트 보조선 가이드</span>
+                <p class="text-xs text-gray-300 mt-1">모든 자산 카드 내의 <b>주황색 점선</b>은 최근 3개월 평균 가격입니다. 현재가가 평균선 위에 있으면 고점 주의, 아래면 저점 기회입니다.</p>
             </div>
         </div>
     </div>
 
+    <!-- [2] 글로벌 자산 히트맵 매트릭스 (Heatmap Summary) -->
+    <div class="mb-10 bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-xl">
+        <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider border-b border-gray-800 pb-2 mb-4">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
+        <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"></div>
+    </div>
+
+    <!-- [3] 카테고리별 상세 스파크라인 카드 덱 (3개월 평균선 포함) -->
     <div class="space-y-10" id="dashboard-container"></div>
 
     <script>
         const rawData = {data_json};
+        const summaryData = {summary_json};
+        
+        // 1. 히트맵 렌더링
+        const heatmapContainer = document.getElementById('heatmap-container');
+        summaryData.forEach(item => {{
+            let isUp = item.change_rate >= 0;
+            // 히트맵 컬러 클래스 (상승은 붉은계열/초록계열 선택 - 여기선 상승 빨강, 하락 파랑 금융 스타일)
+            let bgHeat = isUp ? 'bg-red-950/40 border-red-900/60 text-red-300' : 'bg-blue-950/40 border-blue-900/60 text-blue-300';
+            let sign = isUp ? '+' : '';
+            
+            let cell = document.createElement('div');
+            cell.className = `p-2.5 rounded border ${{bgHeat}} flex flex-col justify-between`;
+            cell.innerHTML = `
+                <span class="text-[11px] font-semibold truncate" title="${{item.name}}">${{item.name}}</span>
+                <div class="flex justify-between items-end mt-2">
+                    <span class="text-xs font-bold">${{item.current.toLocaleString()}}</span>
+                    <span class="text-[10px] font-black">${{sign}}${{item.change_rate}}%</span>
+                </div>
+            `;
+            heatmapContainer.appendChild(cell);
+        }});
+
+        // 2. 카테고리별 카드 및 차트 렌더링
         const container = document.getElementById('dashboard-container');
         let catIndex = 0;
 
@@ -183,6 +188,10 @@ html_template = f"""
                 let badgeClass = isUp ? "bg-red-950 text-red-400 border border-red-900" : "bg-blue-950 text-blue-400 border border-blue-900";
                 let sign = info.change_rate > 0 ? "+" : "";
                 
+                // 3개월 평균 대비 현재가 상태 판단
+                let vsAvg = info.current >= info.avg_3m ? "⚠️ 평균선 상단 (고점 부근)" : "✨ 평균선 하단 (저점 기회)";
+                let vsAvgColor = info.current >= info.avg_3m ? "text-amber-400" : "text-emerald-400";
+
                 let card = document.createElement('div');
                 card.className = "bg-gray-900 border border-gray-800 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-500/50 transition shadow-lg";
                 card.innerHTML = `
@@ -191,9 +200,13 @@ html_template = f"""
                             <h3 class="text-xs font-semibold text-gray-400 truncate w-3/4" title="${{name}}">${{name}}</h3>
                             <span class="text-xs px-1.5 py-0.5 rounded font-bold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
                         </div>
-                        <div class="mt-2 text-xl font-black tracking-tight text-white">${{info.current.toLocaleString()}}</div>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span class="text-xl font-black tracking-tight text-white">${{info.current.toLocaleString()}}</span>
+                            <span class="text-[10px] ${{vsAvgColor}} font-bold">${{vsAvg}}</span>
+                        </div>
+                        <div class="text-[10px] text-gray-500 mt-0.5">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
                     </div>
-                    <div class="mt-4 h-16 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
+                    <div class="mt-3 h-16 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
                     <div class="mt-2 flex justify-between text-[10px] text-gray-500 border-t border-gray-800/60 pt-1">
                         <span>Start: ${{info.dates.length > 0 ? info.dates[0] : 'N/A'}}</span>
                         <span>End: ${{info.dates.length > 0 ? info.dates[info.dates.length-1] : 'N/A'}}</span>
@@ -207,6 +220,7 @@ html_template = f"""
             catIndex++;
         }}
 
+        // 3. Chart.js 스파크라인 및 3개월 평균 수평선(점선) 주입
         setTimeout(() => {{
             let cIdx = 0;
             for (const [category, items] of Object.entries(rawData)) {{
@@ -220,16 +234,27 @@ html_template = f"""
                             type: 'line',
                             data: {{
                                 labels: info.dates,
-                                datasets: [{{
-                                    data: info.sparkline,
-                                    borderColor: isUp ? '#f87171' : '#60a5fa',
-                                    borderWidth: 2,
-                                    pointRadius: 0,
-                                    pointHoverRadius: 4,
-                                    pointHoverBackgroundColor: isUp ? '#f87171' : '#60a5fa',
-                                    tension: 0.1,
-                                    fill: false
-                                }}]
+                                datasets: [
+                                    {{
+                                        label: 'Price',
+                                        data: info.sparkline,
+                                        borderColor: isUp ? '#f87171' : '#60a5fa',
+                                        borderWidth: 2,
+                                        pointRadius: 0,
+                                        pointHoverRadius: 4,
+                                        tension: 0.1,
+                                        fill: false
+                                    }},
+                                    {{
+                                        label: '3M Avg',
+                                        data: info.avg_line,
+                                        borderColor: '#fbbf24', // 주황/노란색 점선 (3개월 평균선)
+                                        borderWidth: 1.5,
+                                        borderDash: [4, 4],
+                                        pointRadius: 0,
+                                        fill: false
+                                    }}
+                                ]
                             }},
                             options: {{
                                 responsive: true, maintainAspectRatio: false,
@@ -239,7 +264,7 @@ html_template = f"""
                                         enabled: true, mode: 'index', intersect: false,
                                         callbacks: {{
                                             title: ctx => ctx[0].label,
-                                            label: ctx => ` Price: ${{ctx.raw.toLocaleString()}}`
+                                            label: ctx => ` ${{ctx.dataset.label}}: ${{ctx.raw.toLocaleString()}}`
                                         }}
                                     }}
                                 }},
@@ -258,4 +283,4 @@ html_template = f"""
 </html>
 """
 
-st.components.v1.html(html_template, height=1500, scrolling=True)
+st.components.v1.html(html_template, height=1700, scrolling=True)
