@@ -118,7 +118,6 @@ html_template = f"""
             }}
         }}
 
-        // 실시간 원가 임팩트 시뮬레이터 로직
         function calculateImpact() {{
             const baseBudget = parseFloat(document.getElementById('annual-budget').value) || 100;
             const fxChange = parseFloat(document.getElementById('fx-slider').value) || 0;
@@ -127,7 +126,6 @@ html_template = f"""
             document.getElementById('fx-val-text').innerText = fxChange + '%';
             document.getElementById('raw-val-text').innerText = rawChange + '%';
 
-            // 단순 가중치 시뮬레이션 공식 (환율 영향 60%, 원자재 영향 40% 가정)
             const totalImpactPct = (fxChange * 0.6) + (rawChange * 0.4);
             const impactedAmount = baseBudget * (totalImpactPct / 100);
             
@@ -138,7 +136,7 @@ html_template = f"""
 </head>
 <body class="bg-slate-100 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-mono antialiased p-8 min-h-screen transition-colors duration-300 text-sm">
     
-    <!-- 상단 헤더 및 테마 스위처 (폰트 확대 및 시인성 개선) -->
+    <!-- 상단 헤더 -->
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-300 dark:border-gray-800 pb-5 mb-8 gap-4">
         <div>
             <h1 class="text-3xl font-black tracking-wider text-emerald-600 dark:text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
@@ -155,23 +153,23 @@ html_template = f"""
         </div>
     </header>
 
-    <!-- [1] 신규 추가: 자재구매팀 연간 원가 변동 임팩트 시뮬레이터 -->
+    <!-- [1] 구매 예산 시뮬레이터 -->
     <div class="mb-10 bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-emerald-500/40 rounded-2xl p-6 shadow-2xl transition-colors">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
-            <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">🧮 Procurement Cost Impact Simulator (구매 예산 시뮬레이터)</h2>
-            <span class="text-xs text-slate-500 dark:text-gray-400 font-bold">환율 및 원자재 변동에 따른 예산 영향도 예측</span>
+            <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">🧮 Procurement Cost Impact Simulator</h2>
+            <span class="text-xs text-slate-500 dark:text-gray-400 font-bold">환율 및 원자재 변동 예산 예측</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
             <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">연간 총 구매 예산 설정 (단위: 억원)</label>
+                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">연간 총 구매 예산 (억원)</label>
                 <input type="number" id="annual-budget" value="100" oninput="calculateImpact()" class="w-full bg-slate-50 dark:bg-gray-950 border border-slate-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">환율(USD/KRW) 변동 예상치: <span id="fx-val-text" class="text-emerald-600 dark:text-emerald-400 font-extrabold">0%</span></label>
+                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">환율(USD/KRW) 변동: <span id="fx-val-text" class="text-emerald-600 dark:text-emerald-400 font-extrabold">0%</span></label>
                 <input type="range" id="fx-slider" min="-20" max="20" value="0" step="1" oninput="calculateImpact()" class="w-full accent-emerald-500 cursor-pointer">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">핵심 원자재(구리 등) 변동 예상치: <span id="raw-val-text" class="text-emerald-600 dark:text-emerald-400 font-extrabold">0%</span></label>
+                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">원자재(구리 등) 변동: <span id="raw-val-text" class="text-emerald-600 dark:text-emerald-400 font-extrabold">0%</span></label>
                 <input type="range" id="raw-slider" min="-30" max="30" value="0" step="1" oninput="calculateImpact()" class="w-full accent-emerald-500 cursor-pointer">
             </div>
         </div>
@@ -203,45 +201,52 @@ html_template = f"""
         </div>
     </div>
 
-    <!-- [3] 글로벌 자산 히트맵 매트릭스 -->
+    <!-- [3] 개선된 히트맵 매트릭스 (시인성 대폭 강화) -->
     <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 rounded-2xl p-6 shadow-xl transition-colors">
         <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-200 dark:border-gray-800 pb-3 mb-5">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
         <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
     </div>
 
-    <!-- [4] 카테고리별 상세 스파크라인 카드 덱 -->
+    <!-- [4] 카테고리별 완벽 분리된 구역 덱 -->
     <div class="space-y-12" id="dashboard-container"></div>
 
     <script>
         const rawData = {data_json};
         const summaryData = {summary_json};
         
-        // 히트맵 렌더링 (폰트 및 여백 키움)
+        // 히트맵 렌더링 (가독성 및 폰트 크기 업그레이드)
         const heatmapContainer = document.getElementById('heatmap-container');
         summaryData.forEach(item => {{
             let isUp = item.change_rate >= 0;
-            let bgHeat = isUp ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300';
+            let bgHeat = isUp ? 'bg-red-100 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200';
             let sign = isUp ? '+' : '';
             
             let cell = document.createElement('div');
-            cell.className = `p-3.5 rounded-xl border ${{bgHeat}} flex flex-col justify-between transition-colors shadow-sm`;
+            cell.className = `p-4 rounded-xl border-2 ${{bgHeat}} flex flex-col justify-between transition-colors shadow-md`;
             cell.innerHTML = `
-                <span class="text-xs font-bold truncate" title="${{item.name}}">${{item.name}}</span>
+                <span class="text-xs font-black truncate" title="${{item.name}}">${{item.name}}</span>
                 <div class="flex justify-between items-end mt-3">
                     <span class="text-sm font-extrabold">${{item.current.toLocaleString()}}</span>
-                    <span class="text-xs font-black">${{sign}}${{item.change_rate}}%</span>
+                    <span class="text-xs font-black px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">${{sign}}${{item.change_rate}}%</span>
                 </div>
             `;
             heatmapContainer.appendChild(cell);
         }});
 
-        // 카테고리별 카드 및 차트 렌더링 (시인성 극대화)
+        // 카테고리별 완벽 분리 카드 덱 렌더링
         const container = document.getElementById('dashboard-container');
         let catIndex = 0;
 
         for (const [category, items] of Object.entries(rawData)) {{
-            let section = document.createElement('section');
-            section.innerHTML = `<h2 class="text-lg font-black text-emerald-600 dark:text-emerald-300 border-b-2 border-slate-300 dark:border-gray-800 pb-3 mb-6 tracking-wide">${{category}}</h2>`;
+            // 카테고리별 독립된 컨테이너 박스 생성
+            let sectionCard = document.createElement('div');
+            sectionCard.className = "bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-3xl p-6 shadow-xl transition-colors";
+            
+            let sectionHeader = document.createElement('div');
+            sectionHeader.className = "border-b-2 border-slate-200 dark:border-gray-800 pb-4 mb-6";
+            sectionHeader.innerHTML = `<h2 class="text-xl font-black text-emerald-600 dark:text-emerald-300 tracking-wide">${{category}}</h2>`;
+            sectionCard.appendChild(sectionHeader);
+
             let grid = document.createElement('div');
             grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
             
@@ -256,11 +261,11 @@ html_template = f"""
                 let vsAvgColor = info.current >= info.avg_3m ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-emerald-600 dark:text-emerald-400 font-extrabold";
 
                 let card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 p-5 rounded-2xl flex flex-col justify-between hover:border-emerald-500 transition shadow-xl";
+                card.className = "bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl flex flex-col justify-between hover:border-emerald-500 transition shadow-md";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start">
-                            <h3 class="text-xs font-bold text-slate-600 dark:text-gray-400 truncate w-3/4" title="${{name}}">${{name}}</h3>
+                            <h3 class="text-xs font-bold text-slate-700 dark:text-gray-300 truncate w-3/4" title="${{name}}">${{name}}</h3>
                             <span class="text-xs px-2 py-0.5 rounded-md font-extrabold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
                         </div>
                         <div class="mt-3 flex items-baseline justify-between">
@@ -278,8 +283,8 @@ html_template = f"""
                 grid.appendChild(card);
                 itemIndex++;
             }}
-            section.appendChild(grid);
-            container.appendChild(section);
+            sectionCard.appendChild(grid);
+            container.appendChild(sectionCard);
             catIndex++;
         }}
 
@@ -346,4 +351,4 @@ html_template = f"""
 </html>
 """
 
-st.components.v1.html(html_template, height=1850, scrolling=True)
+st.components.v1.html(html_template, height=2200, scrolling=True)
