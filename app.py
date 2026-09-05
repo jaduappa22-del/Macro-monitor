@@ -182,7 +182,7 @@ html_template = f"""
 <body class="bg-slate-100 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-mono antialiased p-4 min-h-screen transition-colors duration-300 text-sm">
     
     <!-- 상단 헤더 -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-300 dark:border-gray-800 pb-4 mb-6 gap-4">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-300 dark:border-gray-800 pb-5 mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black tracking-wider text-emerald-600 dark:text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
             <p class="text-xs text-slate-600 dark:text-gray-400 mt-1 font-semibold">Advanced Procurement & Negotiation Analytics Desk</p>
@@ -281,7 +281,7 @@ html_template = f"""
         <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"></div>
     </div>
 
-    <!-- 카테고리별 완벽 분리된 구역 덱 -->
+    <!-- 카테고리별 완벽 분리된 구역 덱 (매크로 지표 카드들) -->
     <div class="space-y-6 mb-6" id="dashboard-container"></div>
 
     <!-- 최하단: 매크로 학습 센터 & 상관관계 분석 가이드 -->
@@ -360,10 +360,153 @@ html_template = f"""
             </div>
         </div>
     </div>
+
+    <script>
+        // 자바스크립트로 카테고리별 매크로 지표 카드 및 차트 동적 렌더링
+        const rawData = {data_json};
+        const summaryData = {summary_json};
+        
+        // 1. 히트맵 렌더링
+        const heatmapContainer = document.getElementById('heatmap-container');
+        if (heatmapContainer && heatmapContainer.children.length === 0) {{
+            summaryData.forEach(item => {{
+                let isUp = item.change_rate >= 0;
+                let bgHeat = isUp ? 'bg-red-100 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200';
+                let sign = isUp ? '+' : '';
+                
+                let cell = document.createElement('div');
+                cell.className = `p-4 rounded-xl border-2 ${{bgHeat}} flex flex-col justify-between transition-colors shadow-md`;
+                cell.innerHTML = `
+                    <span class="text-xs font-black truncate" title="${{item.name}}">${{item.name}}</span>
+                    <div class="flex justify-between items-end mt-3">
+                        <span class="text-sm font-extrabold">${{item.current.toLocaleString()}}</span>
+                        <span class="text-xs font-black px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">${{sign}}${{item.change_rate}}%</span>
+                    </div>
+                `;
+                heatmapContainer.appendChild(cell);
+            }});
+        }}
+
+        // 2. 카테고리별 매크로 지표 카드 덱 렌더링
+        const container = document.getElementById('dashboard-container');
+        if (container && container.children.length === 0) {{
+            let catIndex = 0;
+            for (const [category, items] of Object.entries(rawData)) {{
+                let sectionCard = document.createElement('div');
+                sectionCard.className = "bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-3xl p-6 shadow-xl transition-colors";
+                
+                let sectionHeader = document.createElement('div');
+                sectionHeader.className = "border-b-2 border-slate-200 dark:border-gray-800 pb-4 mb-6";
+                sectionHeader.innerHTML = `<h2 class="text-xl font-black text-emerald-600 dark:text-emerald-300 tracking-wide">${{category}}</h2>`;
+                sectionCard.appendChild(sectionHeader);
+
+                let grid = document.createElement('div');
+                grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
+                
+                let itemIndex = 0;
+                for (const [name, info] of Object.entries(items)) {{
+                    let canvasId = `chart-${{itemIndex}}-${{catIndex}}`;
+                    let isUp = info.change_rate >= 0;
+                    let badgeClass = isUp ? "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-400 border border-red-300 dark:border-red-900" : "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-400 border border-blue-300 dark:border-blue-900";
+                    let sign = info.change_rate > 0 ? "+" : "";
+                    
+                    let vsAvg = info.current >= info.avg_3m ? "⚠️ 평균선 상단" : "✨ 평균선 하단";
+                    let vsAvgColor = info.current >= info.avg_3m ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-emerald-600 dark:text-emerald-400 font-extrabold";
+
+                    let card = document.createElement('div');
+                    card.className = "bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl flex flex-col justify-between hover:border-emerald-500 transition shadow-md";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-xs font-bold text-slate-700 dark:text-gray-300 truncate w-3/4" title="${{name}}">${{name}}</h3>
+                                <span class="text-xs px-2 py-0.5 rounded-md font-extrabold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
+                            </div>
+                            <div class="mt-3 flex items-baseline justify-between">
+                                <span class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">${{info.current.toLocaleString()}}</span>
+                                <span class="text-xs ${{vsAvgColor}}">${{vsAvg}}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 dark:text-gray-400 mt-1 font-semibold">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
+                        </div>
+                        <div class="mt-4 h-20 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
+                        <div class="mt-3 flex justify-between text-xs text-slate-500 dark:text-gray-400 border-t border-slate-200 dark:border-gray-800/80 pt-2 font-medium">
+                            <span>Start: ${{info.dates.length > 0 ? info.dates[0] : 'N/A'}}</span>
+                            <span>End: ${{info.dates.length > 0 ? info.dates[info.dates.length-1] : 'N/A'}}</span>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                    itemIndex++;
+                }}
+                sectionCard.appendChild(grid);
+                container.appendChild(sectionCard);
+                catIndex++;
+            }}
+        }}
+
+        // 3. Chart.js 스파크라인 및 3개월 평균선 렌더링
+        setTimeout(() => {{
+            let cIdx = 0;
+            for (const [category, items] of Object.entries(rawData)) {{
+                let iIdx = 0;
+                for (const [name, info] of Object.entries(items)) {{
+                    let canvasId = `chart-${{iIdx}}-${{cIdx}}`;
+                    let ctx = document.getElementById(canvasId);
+                    if (ctx && info.sparkline && info.sparkline.length > 0) {{
+                        let isUp = info.change_rate >= 0;
+                        new Chart(ctx.getContext('2d'), {{
+                            type: 'line',
+                            data: {{
+                                labels: info.dates,
+                                datasets: [
+                                    {{
+                                        label: 'Price',
+                                        data: info.sparkline,
+                                        borderColor: isUp ? '#f87171' : '#60a5fa',
+                                        borderWidth: 2.5,
+                                        pointRadius: 0,
+                                        pointHoverRadius: 5,
+                                        tension: 0.1,
+                                        fill: false
+                                    }},
+                                    {{
+                                        label: '3M Avg',
+                                        data: info.avg_line,
+                                        borderColor: '#fbbf24',
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        pointRadius: 0,
+                                        fill: false
+                                    }}
+                                ]
+                            }},
+                            options: {{
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: {{
+                                    legend: {{ display: false }},
+                                    tooltip: {{
+                                        enabled: true, mode: 'index', intersect: false,
+                                        callbacks: {{
+                                            title: ctx => ctx[0].label,
+                                            label: ctx => ` ${{ctx.dataset.label}}: ${{ctx.raw.toLocaleString()}}`
+                                        }}
+                                    }}
+                                }},
+                                scales: {{ x: {{ display: false }}, y: {{ display: false }} }},
+                                interaction: {{ mode: 'nearest', axis: 'x', intersect: false }}
+                            }}
+                        }});
+                    }}
+                    iIdx++;
+                }}
+                cIdx++;
+            }}
+        }}, 400);
+    </script>
+</body>
+</html>
 """
 
-# HTML 컴포넌트의 높이를 콘텐츠 높이에 맞게 슬림하게 축소 (기존 3100 -> 1650)
-st.components.v1.html(html_template, height=1650, scrolling=True)
+# 컴포넌트 높이를 적절히 슬림하게 조절하여 불필요한 빈 공백 제거
+st.components.v1.html(html_template, height=1850, scrolling=True)
 
 # ── [가장 하단] 실무 담당자 인사이트 관리 섹션 ──
 st.markdown("---")
@@ -432,88 +575,3 @@ else:
         ]
         st.success(f"ID {item['id']} 인사이트가 삭제되었습니다.")
         st.rerun()
-
-chart_script_html = f"""
-<script>
-    setTimeout(() => {{
-        const rawData = {data_json};
-        let cIdx = 0;
-        for (const [category, items] of Object.entries(rawData)) {{
-            let iIdx = 0;
-            for (const [name, info] of Object.entries(items)) {{
-                let canvasId = `chart-${{iIdx}}-${{cIdx}}`;
-                let ctx = document.getElementById(canvasId);
-                if (ctx && info.sparkline && info.sparkline.length > 0) {{
-                    let isUp = info.change_rate >= 0;
-                    new Chart(ctx.getContext('2d'), {{
-                        type: 'line',
-                        data: {{
-                            labels: info.dates,
-                            datasets: [
-                                {{
-                                    label: 'Price',
-                                    data: info.sparkline,
-                                    borderColor: isUp ? '#f87171' : '#60a5fa',
-                                    borderWidth: 2.5,
-                                    pointRadius: 0,
-                                    pointHoverRadius: 5,
-                                    tension: 0.1,
-                                    fill: false
-                                }},
-                                {{
-                                    label: '3M Avg',
-                                    data: info.avg_line,
-                                    borderColor: '#fbbf24',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    pointRadius: 0,
-                                    fill: false
-                                }}
-                            ]
-                        }},
-                        options: {{
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: {{
-                                legend: {{ display: false }},
-                                tooltip: {{
-                                    enabled: true, mode: 'index', intersect: false,
-                                    callbacks: {{
-                                        title: ctx => ctx[0].label,
-                                        label: ctx => ` ${{ctx.dataset.label}}: ${{ctx.raw.toLocaleString()}}`
-                                    }}
-                                }}
-                            }},
-                            scales: {{ x: {{ display: false }}, y: {{ display: false }} }},
-                            interaction: {{ mode: 'nearest', axis: 'x', intersect: false }}
-                        }}
-                    }});
-                }}
-                iIdx++;
-            }}
-            cIdx++;
-        }}
-
-        const summaryData = {summary_json};
-        const heatmapContainer = document.getElementById('heatmap-container');
-        if (heatmapContainer && heatmapContainer.children.length === 0) {{
-            summaryData.forEach(item => {{
-                let isUp = item.change_rate >= 0;
-                let bgHeat = isUp ? 'bg-red-100 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200';
-                let sign = isUp ? '+' : '';
-                
-                let cell = document.createElement('div');
-                cell.className = `p-4 rounded-xl border-2 ${{bgHeat}} flex flex-col justify-between transition-colors shadow-md`;
-                cell.innerHTML = `
-                    <span class="text-xs font-black truncate" title="${{item.name}}">${{item.name}}</span>
-                    <div class="flex justify-between items-end mt-3">
-                        <span class="text-sm font-extrabold">${{item.current.toLocaleString()}}</span>
-                        <span class="text-xs font-black px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">${{sign}}${{item.change_rate}}%</span>
-                    </div>
-                `;
-                heatmapContainer.appendChild(cell);
-            }});
-        }}
-    }}, 400);
-</script>
-"""
-st.components.v1.html(chart_script_html, height=1, scrolling=False)
