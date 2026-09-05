@@ -49,6 +49,7 @@ def fetch_market_data():
   summary_flat_list = []
   fx_usd_krw = 0.0
   copper_price = 0.0
+  copper_change = 0.0
 
   for category, tickers in categories.items():
     categorized_data[category] = {}
@@ -71,6 +72,7 @@ def fetch_market_data():
               fx_usd_krw = cur
             elif "Copper" in name:
               copper_price = cur
+              copper_change = rate
       except:
         pass
 
@@ -88,13 +90,29 @@ def fetch_market_data():
       categorized_data[category][name] = item_payload
       summary_flat_list.append(item_payload)
 
-  return categorized_data, summary_flat_list, fx_usd_krw, copper_price
+  return (
+      categorized_data,
+      summary_flat_list,
+      fx_usd_krw,
+      copper_price,
+      copper_change,
+  )
 
 
-market_data, summary_list, fx_val, copper_val = fetch_market_data()
+market_data, summary_list, fx_val, copper_val, copper_chg = fetch_market_data()
 update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S KST")
 data_json = json.dumps(market_data)
 summary_json = json.dumps(summary_list)
+
+# 스트레스 지수 및 시그널 자동 판정 로직
+stress_status = "안정 (STABLE)"
+stress_color = "text-emerald-500 bg-emerald-950/60 border-emerald-800"
+if fx_val >= 1350 or copper_chg >= 3.0:
+  stress_status = "주의 / 원가 압박 (CAUTION)"
+  stress_color = "text-amber-500 bg-amber-950/60 border-amber-800"
+if fx_val >= 1380 and copper_chg >= 5.0:
+  stress_status = "고위기 / 비상 대응 (CRITICAL)"
+  stress_color = "text-red-500 bg-red-950/60 border-red-800"
 
 html_template = f"""
 <!DOCTYPE html>
@@ -153,6 +171,35 @@ html_template = f"""
         </div>
     </header>
 
+    <!-- [NEW] 필살기 1: AFK 매크로 체감 지수 & 실무 액션 시그널 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">🚨 AFK Macro Stress Index</span>
+                <div class="mt-3 text-lg font-black px-3 py-2 rounded-xl border text-center {stress_color}">{stress_status}</div>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400 mt-3">환율 및 구리 변동성을 복합 반영한 전사 구매 원가 리스크 등급</p>
+        </div>
+        <div class="bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">💡 Procurement Timing Signal</span>
+                <div class="mt-3 text-sm font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 px-3 py-2 rounded-xl text-center">
+                    { "✨ [조기 발주 권장] 3M 평균 하단 박스권" if fx_val < 1350 else "⚠️ [보수적 발주] 원가 상승 압박 구간" }
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400 mt-3">현물 시세와 3M 평균 비교를 통한 최적의 대금 결제 및 계약 타이밍</p>
+        </div>
+        <div class="bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">🛡️ Vendor Negotiation Memo</span>
+                <div class="mt-2 text-xs font-bold text-slate-800 dark:text-gray-200 bg-slate-100 dark:bg-gray-950 p-2.5 rounded-xl border border-slate-200 dark:border-gray-800">
+                    "현재 환율({fx_val:,.2f}원) 및 구리 변동률({copper_chg:^{1}}%) 감안 시, 공급사의 전면 단가 인상 요구는 <b>객관적 근거 부족</b>으로 방어 가능."
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400 mt-2">공급사 미팅 직전 캡처하여 바로 활용하는 원가 방어 핵심 논리</p>
+        </div>
+    </div>
+
     <!-- [1] 구매 예산 시뮬레이터 -->
     <div class="mb-10 bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-emerald-500/40 rounded-2xl p-6 shadow-2xl transition-colors">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
@@ -201,7 +248,7 @@ html_template = f"""
         </div>
     </div>
 
-    <!-- [3] 개선된 히트맵 매트릭스 (시인성 대폭 강화) -->
+    <!-- [3] 히트맵 매트릭스 -->
     <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 rounded-2xl p-6 shadow-xl transition-colors">
         <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-200 dark:border-gray-800 pb-3 mb-5">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
         <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
@@ -214,7 +261,7 @@ html_template = f"""
         const rawData = {data_json};
         const summaryData = {summary_json};
         
-        // 히트맵 렌더링 (가독성 및 폰트 크기 업그레이드)
+        // 히트맵 렌더링
         const heatmapContainer = document.getElementById('heatmap-container');
         summaryData.forEach(item => {{
             let isUp = item.change_rate >= 0;
@@ -238,7 +285,6 @@ html_template = f"""
         let catIndex = 0;
 
         for (const [category, items] of Object.entries(rawData)) {{
-            // 카테고리별 독립된 컨테이너 박스 생성
             let sectionCard = document.createElement('div');
             sectionCard.className = "bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-3xl p-6 shadow-xl transition-colors";
             
@@ -351,4 +397,4 @@ html_template = f"""
 </html>
 """
 
-st.components.v1.html(html_template, height=2200, scrolling=True)
+st.components.v1.html(html_template, height=2300, scrolling=True)
