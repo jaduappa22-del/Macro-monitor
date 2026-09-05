@@ -23,7 +23,6 @@ def fetch_market_data():
           "Natural Gas (천연가스)": "NG=F",
       },
       "🚢 해운 물류 운임 지수 (Freight Rates)": {
-          "Drewry World Container Index (상하이-로테르담 등)": "S&P 글로벌 및 해운 지표 대체",
           "Baltic Dry Index (BDI 해운운임)": "^BDI",
       },
       "🇺🇸 미국 시장 & 국채 (US Markets)": {
@@ -56,9 +55,6 @@ def fetch_market_data():
     for name, ticker in tickers.items():
       dates, prices, cur, rate, avg_3m = [], [], 0.0, 0.0, 0.0
       try:
-        if ticker.startswith("S&P"):
-          # 가상의 대체 안정 데이터 처리 또는 스킵 방어
-          continue
         tk = yf.Ticker(ticker)
         df = tk.history(period="3mo")
         if df is not None and not df.empty and "Close" in df:
@@ -121,117 +117,160 @@ html_template = f"""
                 document.getElementById('theme-btn').innerText = '☀️ 라이트 모드';
             }}
         }}
+
+        // 실시간 원가 임팩트 시뮬레이터 로직
+        function calculateImpact() {{
+            const baseBudget = parseFloat(document.getElementById('annual-budget').value) || 100;
+            const fxChange = parseFloat(document.getElementById('fx-slider').value) || 0;
+            const rawChange = parseFloat(document.getElementById('raw-slider').value) || 0;
+            
+            document.getElementById('fx-val-text').innerText = fxChange + '%';
+            document.getElementById('raw-val-text').innerText = rawChange + '%';
+
+            // 단순 가중치 시뮬레이션 공식 (환율 영향 60%, 원자재 영향 40% 가정)
+            const totalImpactPct = (fxChange * 0.6) + (rawChange * 0.4);
+            const impactedAmount = baseBudget * (totalImpactPct / 100);
+            
+            let resultText = `예산 변동 폭: 약 <b>${{impactedAmount >= 0 ? '+' : ''}}{{impactedAmount.toFixed(2)}}억 원</b> (${{totalImpactPct.toFixed(1)}}% 영향)`;
+            document.getElementById('simulation-result').innerHTML = resultText;
+        }}
     </script>
 </head>
-<body class="bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-mono antialiased p-6 min-h-screen transition-colors duration-300">
+<body class="bg-slate-100 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-mono antialiased p-8 min-h-screen transition-colors duration-300 text-sm">
     
-    <!-- 상단 헤더 및 테마 스위처 -->
-    <header class="flex justify-between items-center border-b border-slate-200 dark:border-gray-800 pb-4 mb-6">
+    <!-- 상단 헤더 및 테마 스위처 (폰트 확대 및 시인성 개선) -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-300 dark:border-gray-800 pb-5 mb-8 gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-wider text-emerald-600 dark:text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
-            <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">Advanced Procurement & Negotiation Analytics Desk</p>
+            <h1 class="text-3xl font-black tracking-wider text-emerald-600 dark:text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mt-1 font-semibold">Advanced Procurement & Negotiation Analytics Desk</p>
         </div>
         <div class="flex items-center gap-4">
-            <button id="theme-btn" onclick="toggleTheme()" class="px-3 py-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-xs font-bold rounded-lg transition">
-                🌙 다크 모드
+            <button id="theme-btn" onclick="toggleTheme()" class="px-4 py-2 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-xs font-bold rounded-xl transition shadow-sm">
+                ☀️ 라이트 모드
             </button>
             <div class="text-right hidden sm:block">
-                <span class="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs rounded font-bold">LIVE SYSTEM</span>
-                <p class="text-[10px] text-slate-400 dark:text-gray-400 mt-1">Refreshed: {update_time}</p>
+                <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-950 border border-emerald-400 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400 text-xs rounded-lg font-extrabold">LIVE SYSTEM</span>
+                <p class="text-xs text-slate-500 dark:text-gray-400 mt-1.5">Refreshed: {update_time}</p>
             </div>
         </div>
     </header>
 
-    <!-- [1] 실무 교섭 전략 및 자동 인사이트 매트릭스 -->
-    <div class="mb-8 bg-white dark:bg-gray-900 border border-slate-200 dark:border-emerald-500/30 rounded-xl p-4 shadow-xl transition-colors">
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-800 pb-2 mb-3">
-            <h2 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">🎯 AI Procurement & Negotiation Insight Engine</h2>
-            <span class="text-[10px] text-slate-400 dark:text-gray-400">3개월 평균선 기준 원가 리스크 자동 분석</span>
+    <!-- [1] 신규 추가: 자재구매팀 연간 원가 변동 임팩트 시뮬레이터 -->
+    <div class="mb-10 bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-emerald-500/40 rounded-2xl p-6 shadow-2xl transition-colors">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
+            <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">🧮 Procurement Cost Impact Simulator (구매 예산 시뮬레이터)</h2>
+            <span class="text-xs text-slate-500 dark:text-gray-400 font-bold">환율 및 원자재 변동에 따른 예산 영향도 예측</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-amber-600 dark:text-amber-400">💱 환율 리스크 (USD/KRW)</span>
-                <p class="text-xs text-slate-600 dark:text-gray-300 mt-1">현재 환율: <b>{fx_val:,.2f}원</b>. { "1,350원 상회로 수입단가 상승 압박. 네고 분산 필요" if fx_val >= 1350 else "1,350원 하회로 안정 국면. 대금 결제 유리" }</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">연간 총 구매 예산 설정 (단위: 억원)</label>
+                <input type="number" id="annual-budget" value="100" oninput="calculateImpact()" class="w-full bg-slate-50 dark:bg-gray-950 border border-slate-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
             </div>
-            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-sky-600 dark:text-sky-400">🛠️ 원자재 닥터코퍼 (Copper)</span>
-                <p class="text-xs text-slate-600 dark:text-gray-300 mt-1">현재가: <b>{copper_val:,.2f}</b>. 제조업 부품 및 전선류 공급사 단가 인상 요구 시 3개월 평균선 비교 방어 논리 제공.</p>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">환율(USD/KRW) 변동 예상치: <span id="fx-val-text" class="text-emerald-600 dark:text-emerald-400 font-extrabold">0%</span></label>
+                <input type="range" id="fx-slider" min="-20" max="20" value="0" step="1" oninput="calculateImpact()" class="w-full accent-emerald-500 cursor-pointer">
             </div>
-            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">📈 차트 보조선 가이드</span>
-                <p class="text-xs text-slate-600 dark:text-gray-300 mt-1">모든 자산 카드 내의 <b>점선</b>은 최근 3개월 평균 가격입니다. 현재가가 평균선 위에 있으면 고점 주의, 아래면 저점 기회입니다.</p>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">핵심 원자재(구리 등) 변동 예상치: <span id="raw-val-text" class="text-emerald-600 dark:text-emerald-400 font-extrabold">0%</span></label>
+                <input type="range" id="raw-slider" min="-30" max="30" value="0" step="1" oninput="calculateImpact()" class="w-full accent-emerald-500 cursor-pointer">
+            </div>
+        </div>
+        <div class="mt-5 p-4 bg-slate-100 dark:bg-gray-950/80 rounded-xl border border-slate-200 dark:border-gray-800 flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-600 dark:text-gray-400">💡 시뮬레이션 결과 예측</span>
+            <div id="simulation-result" class="text-sm font-bold text-slate-900 dark:text-white">예산 변동 폭: <b>0.00억 원</b> (0.0% 영향)</div>
+        </div>
+    </div>
+
+    <!-- [2] AI 교섭 전략 및 자동 인사이트 매트릭스 -->
+    <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 rounded-2xl p-6 shadow-xl transition-colors">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
+            <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">🎯 AI Procurement & Negotiation Insight Engine</h2>
+            <span class="text-xs text-slate-500 dark:text-gray-400 font-bold">3개월 평균선 기준 원가 리스크 분석</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-4 rounded-xl">
+                <span class="text-sm font-extrabold text-amber-600 dark:text-amber-400 block mb-1">💱 환율 리스크 (USD/KRW)</span>
+                <p class="text-xs text-slate-700 dark:text-gray-300 leading-relaxed">현재 환율: <b>{fx_val:,.2f}원</b>. { "1,350원 상회로 수입단가 상승 압박. 네고 분산 필요" if fx_val >= 1350 else "1,350원 하회로 안정 국면. 대금 결제 유리" }</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-4 rounded-xl">
+                <span class="text-sm font-extrabold text-sky-600 dark:text-sky-400 block mb-1">🛠️ 원자재 닥터코퍼 (Copper)</span>
+                <p class="text-xs text-slate-700 dark:text-gray-300 leading-relaxed">현재가: <b>{copper_val:,.2f}</b>. 제조업 부품 및 전선류 공급사 단가 인상 요구 시 3개월 평균선 비교 방어 논리 제공.</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-4 rounded-xl">
+                <span class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 block mb-1">📈 차트 보조선 가이드</span>
+                <p class="text-xs text-slate-700 dark:text-gray-300 leading-relaxed">모든 자산 카드 내의 <b>점선</b>은 최근 3개월 평균 가격입니다. 현재가가 평균선 위에 있으면 고점 주의, 아래면 저점 기회입니다.</p>
             </div>
         </div>
     </div>
 
-    <!-- [2] 글로벌 자산 히트맵 매트릭스 -->
-    <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xl transition-colors">
-        <h2 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-100 dark:border-gray-800 pb-2 mb-4">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
-        <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"></div>
+    <!-- [3] 글로벌 자산 히트맵 매트릭스 -->
+    <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 rounded-2xl p-6 shadow-xl transition-colors">
+        <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-200 dark:border-gray-800 pb-3 mb-5">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
+        <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
     </div>
 
-    <!-- [3] 카테고리별 상세 스파크라인 카드 덱 -->
-    <div class="space-y-10" id="dashboard-container"></div>
+    <!-- [4] 카테고리별 상세 스파크라인 카드 덱 -->
+    <div class="space-y-12" id="dashboard-container"></div>
 
     <script>
         const rawData = {data_json};
         const summaryData = {summary_json};
         
-        // 히트맵 렌더링
+        // 히트맵 렌더링 (폰트 및 여백 키움)
         const heatmapContainer = document.getElementById('heatmap-container');
         summaryData.forEach(item => {{
             let isUp = item.change_rate >= 0;
-            let bgHeat = isUp ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-300' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-600 dark:text-blue-300';
+            let bgHeat = isUp ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300';
             let sign = isUp ? '+' : '';
             
             let cell = document.createElement('div');
-            cell.className = `p-2.5 rounded border ${{bgHeat}} flex flex-col justify-between transition-colors`;
+            cell.className = `p-3.5 rounded-xl border ${{bgHeat}} flex flex-col justify-between transition-colors shadow-sm`;
             cell.innerHTML = `
-                <span class="text-[11px] font-semibold truncate" title="${{item.name}}">${{item.name}}</span>
-                <div class="flex justify-between items-end mt-2">
-                    <span class="text-xs font-bold">${{item.current.toLocaleString()}}</span>
-                    <span class="text-[10px] font-black">${{sign}}${{item.change_rate}}%</span>
+                <span class="text-xs font-bold truncate" title="${{item.name}}">${{item.name}}</span>
+                <div class="flex justify-between items-end mt-3">
+                    <span class="text-sm font-extrabold">${{item.current.toLocaleString()}}</span>
+                    <span class="text-xs font-black">${{sign}}${{item.change_rate}}%</span>
                 </div>
             `;
             heatmapContainer.appendChild(cell);
         }});
 
-        // 카테고리별 카드 및 차트 렌더링
+        // 카테고리별 카드 및 차트 렌더링 (시인성 극대화)
         const container = document.getElementById('dashboard-container');
         let catIndex = 0;
 
         for (const [category, items] of Object.entries(rawData)) {{
             let section = document.createElement('section');
-            section.innerHTML = `<h2 class="text-sm font-bold text-emerald-600 dark:text-emerald-300 border-b border-slate-200 dark:border-gray-800 pb-2 mb-4 tracking-wide">${{category}}</h2>`;
+            section.innerHTML = `<h2 class="text-lg font-black text-emerald-600 dark:text-emerald-300 border-b-2 border-slate-300 dark:border-gray-800 pb-3 mb-6 tracking-wide">${{category}}</h2>`;
             let grid = document.createElement('div');
-            grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
+            grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
             
             let itemIndex = 0;
             for (const [name, info] of Object.entries(items)) {{
                 let canvasId = `chart-${{itemIndex}}-${{catIndex}}`;
                 let isUp = info.change_rate >= 0;
-                let badgeClass = isUp ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-900" : "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-900";
+                let badgeClass = isUp ? "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-400 border border-red-300 dark:border-red-900" : "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-400 border border-blue-300 dark:border-blue-900";
                 let sign = info.change_rate > 0 ? "+" : "";
                 
                 let vsAvg = info.current >= info.avg_3m ? "⚠️ 평균선 상단" : "✨ 평균선 하단";
-                let vsAvgColor = info.current >= info.avg_3m ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400";
+                let vsAvgColor = info.current >= info.avg_3m ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-emerald-600 dark:text-emerald-400 font-extrabold";
 
                 let card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-500/50 transition shadow-lg";
+                card.className = "bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 p-5 rounded-2xl flex flex-col justify-between hover:border-emerald-500 transition shadow-xl";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start">
-                            <h3 class="text-xs font-semibold text-slate-500 dark:text-gray-400 truncate w-3/4" title="${{name}}">${{name}}</h3>
-                            <span class="text-xs px-1.5 py-0.5 rounded font-bold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
+                            <h3 class="text-xs font-bold text-slate-600 dark:text-gray-400 truncate w-3/4" title="${{name}}">${{name}}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded-md font-extrabold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
                         </div>
-                        <div class="mt-2 flex items-baseline justify-between">
-                            <span class="text-xl font-black tracking-tight text-slate-900 dark:text-white">${{info.current.toLocaleString()}}</span>
-                            <span class="text-[10px] ${{vsAvgColor}} font-bold">${{vsAvg}}</span>
+                        <div class="mt-3 flex items-baseline justify-between">
+                            <span class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">${{info.current.toLocaleString()}}</span>
+                            <span class="text-xs ${{vsAvgColor}}">${{vsAvg}}</span>
                         </div>
-                        <div class="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
+                        <div class="text-xs text-slate-500 dark:text-gray-400 mt-1 font-semibold">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
                     </div>
-                    <div class="mt-3 h-16 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
-                    <div class="mt-2 flex justify-between text-[10px] text-slate-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/60 pt-1">
+                    <div class="mt-4 h-20 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
+                    <div class="mt-3 flex justify-between text-xs text-slate-500 dark:text-gray-400 border-t border-slate-200 dark:border-gray-800/80 pt-2 font-medium">
                         <span>Start: ${{info.dates.length > 0 ? info.dates[0] : 'N/A'}}</span>
                         <span>End: ${{info.dates.length > 0 ? info.dates[info.dates.length-1] : 'N/A'}}</span>
                     </div>
@@ -263,9 +302,9 @@ html_template = f"""
                                         label: 'Price',
                                         data: info.sparkline,
                                         borderColor: isUp ? '#f87171' : '#60a5fa',
-                                        borderWidth: 2,
+                                        borderWidth: 2.5,
                                         pointRadius: 0,
-                                        pointHoverRadius: 4,
+                                        pointHoverRadius: 5,
                                         tension: 0.1,
                                         fill: false
                                     }},
@@ -273,8 +312,8 @@ html_template = f"""
                                         label: '3M Avg',
                                         data: info.avg_line,
                                         borderColor: '#fbbf24',
-                                        borderWidth: 1.5,
-                                        borderDash: [4, 4],
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
                                         pointRadius: 0,
                                         fill: false
                                     }}
@@ -307,4 +346,4 @@ html_template = f"""
 </html>
 """
 
-st.components.v1.html(html_template, height=1700, scrolling=True)
+st.components.v1.html(html_template, height=1850, scrolling=True)
