@@ -104,7 +104,6 @@ update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S KST")
 data_json = json.dumps(market_data)
 summary_json = json.dumps(summary_list)
 
-# 스트레스 지수 및 시그널 자동 판정 로직
 stress_status = "안정 (STABLE)"
 stress_color = "text-emerald-500 bg-emerald-950/60 border-emerald-800"
 if fx_val >= 1350 or copper_chg >= 3.0:
@@ -171,7 +170,7 @@ html_template = f"""
         </div>
     </header>
 
-    <!-- [NEW] 필살기 1: AFK 매크로 체감 지수 & 실무 액션 시그널 -->
+    <!-- 매크로 체감 지수 & 실무 액션 시그널 -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
             <div>
@@ -193,14 +192,14 @@ html_template = f"""
             <div>
                 <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">🛡️ Vendor Negotiation Memo</span>
                 <div class="mt-2 text-xs font-bold text-slate-800 dark:text-gray-200 bg-slate-100 dark:bg-gray-950 p-2.5 rounded-xl border border-slate-200 dark:border-gray-800">
-                    "현재 환율({fx_val:,.2f}원) 및 구리 변동률({copper_chg:^{1}}%) 감안 시, 공급사의 전면 단가 인상 요구는 <b>객관적 근거 부족</b>으로 방어 가능."
+                    "현재 환율({fx_val:,.2f}원) 및 구리 변동률({copper_chg:,.2f}%) 감안 시, 공급사의 전면 단가 인상 요구는 <b>객관적 근거 부족</b>으로 방어 가능."
                 </div>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-gray-400 mt-2">공급사 미팅 직전 캡처하여 바로 활용하는 원가 방어 핵심 논리</p>
         </div>
     </div>
 
-    <!-- [1] 구매 예산 시뮬레이터 -->
+    <!-- 구매 예산 시뮬레이터 -->
     <div class="mb-10 bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-emerald-500/40 rounded-2xl p-6 shadow-2xl transition-colors">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
             <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">🧮 Procurement Cost Impact Simulator</h2>
@@ -226,7 +225,7 @@ html_template = f"""
         </div>
     </div>
 
-    <!-- [2] AI 교섭 전략 및 자동 인사이트 매트릭스 -->
+    <!-- AI 교섭 전략 및 자동 인사이트 매트릭스 -->
     <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 rounded-2xl p-6 shadow-xl transition-colors">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
             <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">🎯 AI Procurement & Negotiation Insight Engine</h2>
@@ -248,20 +247,98 @@ html_template = f"""
         </div>
     </div>
 
-    <!-- [3] 히트맵 매트릭스 -->
+    <!-- 히트맵 매트릭스 -->
     <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-800 rounded-2xl p-6 shadow-xl transition-colors">
         <h2 class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-200 dark:border-gray-800 pb-3 mb-5">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
         <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
     </div>
 
-    <!-- [4] 카테고리별 완벽 분리된 구역 덱 -->
-    <div class="space-y-12" id="dashboard-container"></div>
+    <!-- 카테고리별 완벽 분리된 구역 덱 -->
+    <div class="space-y-12 mb-16" id="dashboard-container"></div>
+
+    <!-- [NEW] 최하단: 매크로 지표 학습 센터 & 상관관계 분석 가이드 -->
+    <div class="bg-white dark:bg-gray-900 border-2 border-emerald-500/40 rounded-3xl p-8 shadow-2xl transition-colors">
+        <div class="border-b-2 border-slate-200 dark:border-gray-800 pb-4 mb-6">
+            <h2 class="text-2xl font-black text-emerald-600 dark:text-emerald-300 tracking-wide">📚 MACRO LEARNING CENTER & CORRELATION MAP</h2>
+            <p class="text-xs text-slate-500 dark:text-gray-400 mt-1 font-bold">자재구매팀 실무 역량 강화를 위한 거시경제 지표 가이드 및 상관관계 분석</p>
+        </div>
+
+        <!-- 1. 지표별 상세 가이드 카드 그리드 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+                <span class="text-xs font-black px-2 py-1 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400">🇺🇸 US 10Y Treasury (국채 금리)</span>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mt-3">글로벌 자금 조달 및 할인율의 기준</h3>
+                <p class="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <b>경제 영향</b>: 무위험 수익률의 벤치마크로 전 세계 대출, 회사채 금리의 기준이 됨.<br>
+                    <b>물가·공급</b>: 금리 상승 시 기업 투자 위축, 달러 강세 유발로 수입 원가 압박 심화.
+                </p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+                <span class="text-xs font-black px-2 py-1 rounded bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-400">🛠️ Copper (구리 / 닥터 코퍼)</span>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mt-3">실물 경기 및 전선·부품 원가 선행 지표</h3>
+                <p class="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <b>경제 영향</b>: 건설, 전기·전자, 인프라 전반에 쓰여 '경기의 닥터'로 불림.<br>
+                    <b>물가·공급</b>: 구리 상승은 곧바로 전기/전자 부품 및 전선류 공급사 단가 인상 압박으로 직결.
+                </p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+                <span class="text-xs font-black px-2 py-1 rounded bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-400">✨ Gold (금 / 안전자산)</span>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mt-3">인플레이션 헷지 및 경제 불확실성 척도</h3>
+                <p class="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <b>경제 영향</b>: 화폐 가치 하락이나 지정학적 리스크 고조 시 자금이 몰림.<br>
+                    <b>물가·공급</b>: 인플레이션 헤지 수단이며, 금값 폭등은 원자재 전반의 투기적 매수 심리를 반영.
+                </p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+                <span class="text-xs font-black px-2 py-1 rounded bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-400">🛢️ Crude Oil (유가 - WTI/Brent)</span>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mt-3">글로벌 물류비와 제조 원가의 심장</h3>
+                <p class="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <b>경제 영향</b>: 석유화학 제품 원료 및 전 세계 해상·육상 물류의 핵심 동력.<br>
+                    <b>물가·공급</b>: 유가 상승은 즉각적인 CPI(소비자물가) 상승 및 컨테이너 운임 할증료(BAF) 인상 유발.
+                </p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+                <span class="text-xs font-black px-2 py-1 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-400">🪙 Platinum & Palladium (백금/팔라듐)</span>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mt-3">정밀 화학 및 전장 부품 핵심 촉매</h3>
+                <p class="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <b>경제 영향</b>: 자동차 배기가스 저감 장치 및 반도체/정밀 화학 공정 필수 소재.<br>
+                    <b>물가·공급</b>: 특정 산유국(러시아 등) 수급 이슈에 취약하여 공급망 리스크 관리 필수.
+                </p>
+            </div>
+            <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+                <span class="text-xs font-black px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400">💱 USD/KRW (원/달러 환율)</span>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mt-3">수입 원가 및 대금 결제의 명암</h3>
+                <p class="text-xs text-slate-600 dark:text-gray-400 mt-2 leading-relaxed">
+                    <b>경제 영향</b>: 국내 모든 수입 원자재 및 부품의 원화 환산 가격을 결정.<br>
+                    <b>물가·공급</b>: 환율 상승(원화 약세) 시 수입 물가 직격탄, 구매 예산 조기 소진의 주범.
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. 지표 간 상관관계도 (Correlation Matrix / Flow Map) -->
+        <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-6 rounded-2xl">
+            <h3 class="text-base font-black text-slate-900 dark:text-white mb-4">🔗 거시경제 지표 간 상관관계 메커니즘 (Macro Correlation Flow)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="p-4 rounded-xl bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-sm">
+                    <span class="font-bold text-amber-600 dark:text-amber-400 block mb-1">① 유가 상승 ➔ 물가 및 물류비 연쇄 타격</span>
+                    <p class="text-slate-600 dark:text-gray-400">원유 가격이 오르면 제조 에너지 비용과 해운/육상 운임이 동반 상승하여 최종 부품 단가 인상 압박으로 이어짐.</p>
+                </div>
+                <div class="p-4 rounded-xl bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-sm">
+                    <span class="font-bold text-sky-600 dark:text-sky-400 block mb-1">② 미국 국채금리 ➔ 환율 및 수입단가 상승</span>
+                    <p class="text-slate-600 dark:text-gray-400">미국 금리가 오르면 글로벌 자금이 미국으로 몰리며 원/달러 환율이 상승(원화 약세), 수입 원재료 구매 비용 가중.</p>
+                </div>
+                <div class="p-4 rounded-xl bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-sm">
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400 block mb-1">③ 닥터 코퍼(구리) ➔ 제조업 전반의 선행 원가 경보</span>
+                    <p class="text-slate-600 dark:text-gray-400">구리 가격의 추세 전환은 1~2달 뒤 실제 제조업 자재 공급사의 단가 조정 요구로 직결되는 핵심 선행 지표.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const rawData = {data_json};
         const summaryData = {summary_json};
         
-        // 히트맵 렌더링
         const heatmapContainer = document.getElementById('heatmap-container');
         summaryData.forEach(item => {{
             let isUp = item.change_rate >= 0;
@@ -280,7 +357,6 @@ html_template = f"""
             heatmapContainer.appendChild(cell);
         }});
 
-        // 카테고리별 완벽 분리 카드 덱 렌더링
         const container = document.getElementById('dashboard-container');
         let catIndex = 0;
 
@@ -334,7 +410,6 @@ html_template = f"""
             catIndex++;
         }}
 
-        // Chart.js 렌더링
         setTimeout(() => {{
             let cIdx = 0;
             for (const [category, items] of Object.entries(rawData)) {{
@@ -397,4 +472,4 @@ html_template = f"""
 </html>
 """
 
-st.components.v1.html(html_template, height=2300, scrolling=True)
+st.components.v1.html(html_template, height=3100, scrolling=True)
