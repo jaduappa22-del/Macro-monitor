@@ -150,6 +150,8 @@ html_template = f"""
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 화면 캡쳐를 위한 html2canvas 라이브러리 로드 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         tailwind.config = {{ darkMode: 'class' }};
         function toggleTheme() {{
@@ -177,17 +179,44 @@ html_template = f"""
             let resultText = `예산 변동 폭: 약 <b>${{impactedAmount >= 0 ? '+' : ''}}{{impactedAmount.toFixed(2)}}억 원</b> (${{totalImpactPct.toFixed(1)}}% 영향)`;
             document.getElementById('simulation-result').innerHTML = resultText;
         }}
+
+        // 대시보드 통째로 이미지 캡쳐 및 다운로드 함수
+        function captureDashboard() {{
+            const captureBtn = document.getElementById('capture-btn');
+            captureBtn.innerText = "📸 캡쳐 중...";
+            
+            // 전체 바디 영역을 캔버스로 변환
+            html2canvas(document.body, {{
+                scale: 2, // 고해상도 설정
+                useCORS: true,
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#030712' : '#f1f5f9'
+            }}).then(canvas => {{
+                const link = document.createElement('a');
+                link.download = 'Macro_Intelligence_Terminal_' + new Date().toISOString().slice(0,10) + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                captureBtn.innerText = "📸 대시보드 전체 캡쳐저장";
+            }}).catch(err => {{
+                console.error("캡쳐 실패:", err);
+                alert("화면 캡쳐 중 오류가 발생했습니다.");
+                captureBtn.innerText = "📸 대시보드 전체 캡쳐저장";
+            }});
+        }}
     </script>
 </head>
 <body class="bg-slate-100 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-mono antialiased p-4 min-h-screen transition-colors duration-300 text-sm">
     
-    <!-- 상단 헤더 -->
+    <!-- 상단 헤더 및 캡쳐 버튼 -->
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-300 dark:border-gray-800 pb-5 mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black tracking-wider text-emerald-600 dark:text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
             <p class="text-xs text-slate-600 dark:text-gray-400 mt-1 font-semibold">Advanced Procurement & Negotiation Analytics Desk</p>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+            <!-- 캡쳐 버튼 추가 -->
+            <button id="capture-btn" onclick="captureDashboard()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5">
+                📸 대시보드 전체 캡쳐저장
+            </button>
             <button id="theme-btn" onclick="toggleTheme()" class="px-3 py-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-xs font-bold rounded-xl transition shadow-sm">
                 ☀️ 라이트 모드
             </button>
@@ -281,10 +310,10 @@ html_template = f"""
         <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"></div>
     </div>
 
-    <!-- 카테고리별 완벽 분리된 구역 덱 (매크로 지표 카드들) -->
+    <!-- 카테고리별 매크로 지표 카드 덱 -->
     <div class="space-y-6 mb-6" id="dashboard-container"></div>
 
-    <!-- 최하단: 매크로 학습 센터 & 상관관계 분석 가이드 -->
+    <!-- 최하단: 학습 센터 -->
     <div class="bg-white dark:bg-gray-900 border-2 border-emerald-500/40 rounded-2xl p-6 shadow-md transition-colors">
         <div class="border-b border-slate-200 dark:border-gray-800 pb-3 mb-4">
             <h2 class="text-lg font-black text-emerald-600 dark:text-emerald-300 tracking-wide">📚 MACRO LEARNING CENTER & CORRELATION MAP</h2>
@@ -362,7 +391,6 @@ html_template = f"""
     </div>
 
     <script>
-        // 자바스크립트로 카테고리별 매크로 지표 카드 및 차트 동적 렌더링
         const rawData = {data_json};
         const summaryData = {summary_json};
         
@@ -505,7 +533,6 @@ html_template = f"""
 </html>
 """
 
-# 컴포넌트 높이를 적절히 슬림하게 조절하여 불필요한 빈 공백 제거
 st.components.v1.html(html_template, height=1850, scrolling=True)
 
 # ── [가장 하단] 실무 담당자 인사이트 관리 섹션 ──
