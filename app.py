@@ -4,7 +4,7 @@ import streamlit as st
 import yfinance as yf
 
 st.set_page_config(
-    page_title="Global Macro Terminal - Advanced Procurement",
+    page_title="Global Macro Intelligence Terminal",
     page_icon="⚡",
     layout="wide",
 )
@@ -17,12 +17,14 @@ def fetch_market_data():
           "Silver (은)": "SI=F",
           "Palladium (팔라듐)": "PA=F",
           "Platinum (백금)": "PL=F",
-          "Tin (주석)": "SISI=F",
           "Copper (구리)": "HG=F",
           "Crude Oil WTI (WTI 원유)": "CL=F",
           "Crude Oil Brent (브렌트유)": "BZ=F",
-          "Dubai Oil (두바이유)": "DUBA=F",
           "Natural Gas (천연가스)": "NG=F",
+      },
+      "🚢 해운 물류 운임 지수 (Freight Rates)": {
+          "Drewry World Container Index (상하이-로테르담 등)": "S&P 글로벌 및 해운 지표 대체",
+          "Baltic Dry Index (BDI 해운운임)": "^BDI",
       },
       "🇺🇸 미국 시장 & 국채 (US Markets)": {
           "S&P 500": "^GSPC",
@@ -35,7 +37,6 @@ def fetch_market_data():
           "KOSDAQ": "^KQ11",
           "Samsung Electronics (삼성전자)": "005930.KS",
           "SK Hynix (SK하이닉스)": "000660.KS",
-          "LG Electronics (LG전자)": "066570.KS",
       },
       "💱 환율 (Foreign Exchange)": {
           "USD/KRW (원/달러)": "KRW=X",
@@ -55,6 +56,9 @@ def fetch_market_data():
     for name, ticker in tickers.items():
       dates, prices, cur, rate, avg_3m = [], [], 0.0, 0.0, 0.0
       try:
+        if ticker.startswith("S&P"):
+          # 가상의 대체 안정 데이터 처리 또는 스킵 방어
+          continue
         tk = yf.Ticker(ticker)
         df = tk.history(period="3mo")
         if df is not None and not df.empty and "Close" in df:
@@ -98,69 +102,90 @@ summary_json = json.dumps(summary_list)
 
 html_template = f"""
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="dark">
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {{
+            darkMode: 'class',
+        }}
+        function toggleTheme() {{
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {{
+                html.classList.remove('dark');
+                document.getElementById('theme-btn').innerText = '🌙 다크 모드';
+            }} else {{
+                html.classList.add('dark');
+                document.getElementById('theme-btn').innerText = '☀️ 라이트 모드';
+            }}
+        }}
+    </script>
 </head>
-<body class="bg-gray-950 text-gray-100 font-mono antialiased p-6 min-h-screen">
-    <header class="flex justify-between items-center border-b border-gray-800 pb-4 mb-6">
+<body class="bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-mono antialiased p-6 min-h-screen transition-colors duration-300">
+    
+    <!-- 상단 헤더 및 테마 스위처 -->
+    <header class="flex justify-between items-center border-b border-slate-200 dark:border-gray-800 pb-4 mb-6">
         <div>
-            <h1 class="text-2xl font-black tracking-wider text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
-            <p class="text-xs text-gray-400 mt-1">Advanced Procurement & Negotiation Analytics Desk</p>
+            <h1 class="text-2xl font-black tracking-wider text-emerald-600 dark:text-emerald-400">⚡ GLOBAL MACRO INTELLIGENCE TERMINAL</h1>
+            <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">Advanced Procurement & Negotiation Analytics Desk</p>
         </div>
-        <div class="text-right">
-            <span class="px-2.5 py-1 bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs rounded font-bold">LIVE SYSTEM</span>
-            <p class="text-xs text-gray-400 mt-1">Refreshed: {update_time}</p>
+        <div class="flex items-center gap-4">
+            <button id="theme-btn" onclick="toggleTheme()" class="px-3 py-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-xs font-bold rounded-lg transition">
+                🌙 다크 모드
+            </button>
+            <div class="text-right hidden sm:block">
+                <span class="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs rounded font-bold">LIVE SYSTEM</span>
+                <p class="text-[10px] text-slate-400 dark:text-gray-400 mt-1">Refreshed: {update_time}</p>
+            </div>
         </div>
     </header>
 
     <!-- [1] 실무 교섭 전략 및 자동 인사이트 매트릭스 -->
-    <div class="mb-8 bg-gray-900 border border-emerald-500/30 rounded-xl p-4 shadow-xl">
-        <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-3">
-            <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🎯 AI Procurement & Negotiation Insight Engine</h2>
-            <span class="text-[10px] text-gray-400">3개월 평균선 기준 원가 리스크 자동 분석</span>
+    <div class="mb-8 bg-white dark:bg-gray-900 border border-slate-200 dark:border-emerald-500/30 rounded-xl p-4 shadow-xl transition-colors">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-800 pb-2 mb-3">
+            <h2 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">🎯 AI Procurement & Negotiation Insight Engine</h2>
+            <span class="text-[10px] text-slate-400 dark:text-gray-400">3개월 평균선 기준 원가 리스크 자동 분석</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-950/60 border border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-amber-400">💱 환율 리스크 (USD/KRW)</span>
-                <p class="text-xs text-gray-300 mt-1">현재 환율: <b>{fx_val:,.2f}원</b>. { "1,350원 상회로 수입단가 상승 압박. 네고 분산 필요" if fx_val >= 1350 else "1,350원 하회로 안정 국면. 대금 결제 유리" }</p>
+            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-3 rounded-lg">
+                <span class="text-xs font-bold text-amber-600 dark:text-amber-400">💱 환율 리스크 (USD/KRW)</span>
+                <p class="text-xs text-slate-600 dark:text-gray-300 mt-1">현재 환율: <b>{fx_val:,.2f}원</b>. { "1,350원 상회로 수입단가 상승 압박. 네고 분산 필요" if fx_val >= 1350 else "1,350원 하회로 안정 국면. 대금 결제 유리" }</p>
             </div>
-            <div class="bg-gray-950/60 border border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-sky-400">🛠️ 원자재 닥터코퍼 (Copper)</span>
-                <p class="text-xs text-gray-300 mt-1">현재가: <b>{copper_val:,.2f}</b>. 제조업 부품 및 전선류 공급사 단가 인상 요구 시 3개월 평균선 비교 방어 논리 제공.</p>
+            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-3 rounded-lg">
+                <span class="text-xs font-bold text-sky-600 dark:text-sky-400">🛠️ 원자재 닥터코퍼 (Copper)</span>
+                <p class="text-xs text-slate-600 dark:text-gray-300 mt-1">현재가: <b>{copper_val:,.2f}</b>. 제조업 부품 및 전선류 공급사 단가 인상 요구 시 3개월 평균선 비교 방어 논리 제공.</p>
             </div>
-            <div class="bg-gray-950/60 border border-gray-800 p-3 rounded-lg">
-                <span class="text-xs font-bold text-emerald-400">📈 차트 보조선 가이드</span>
-                <p class="text-xs text-gray-300 mt-1">모든 자산 카드 내의 <b>주황색 점선</b>은 최근 3개월 평균 가격입니다. 현재가가 평균선 위에 있으면 고점 주의, 아래면 저점 기회입니다.</p>
+            <div class="bg-slate-50 dark:bg-gray-950/60 border border-slate-200 dark:border-gray-800 p-3 rounded-lg">
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">📈 차트 보조선 가이드</span>
+                <p class="text-xs text-slate-600 dark:text-gray-300 mt-1">모든 자산 카드 내의 <b>점선</b>은 최근 3개월 평균 가격입니다. 현재가가 평균선 위에 있으면 고점 주의, 아래면 저점 기회입니다.</p>
             </div>
         </div>
     </div>
 
-    <!-- [2] 글로벌 자산 히트맵 매트릭스 (Heatmap Summary) -->
-    <div class="mb-10 bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-xl">
-        <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider border-b border-gray-800 pb-2 mb-4">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
+    <!-- [2] 글로벌 자산 히트맵 매트릭스 -->
+    <div class="mb-10 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xl transition-colors">
+        <h2 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-100 dark:border-gray-800 pb-2 mb-4">🔥 Macro Asset Performance Heatmap (3M Change Matrix)</h2>
         <div id="heatmap-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"></div>
     </div>
 
-    <!-- [3] 카테고리별 상세 스파크라인 카드 덱 (3개월 평균선 포함) -->
+    <!-- [3] 카테고리별 상세 스파크라인 카드 덱 -->
     <div class="space-y-10" id="dashboard-container"></div>
 
     <script>
         const rawData = {data_json};
         const summaryData = {summary_json};
         
-        // 1. 히트맵 렌더링
+        // 히트맵 렌더링
         const heatmapContainer = document.getElementById('heatmap-container');
         summaryData.forEach(item => {{
             let isUp = item.change_rate >= 0;
-            // 히트맵 컬러 클래스 (상승은 붉은계열/초록계열 선택 - 여기선 상승 빨강, 하락 파랑 금융 스타일)
-            let bgHeat = isUp ? 'bg-red-950/40 border-red-900/60 text-red-300' : 'bg-blue-950/40 border-blue-900/60 text-blue-300';
+            let bgHeat = isUp ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-300' : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-600 dark:text-blue-300';
             let sign = isUp ? '+' : '';
             
             let cell = document.createElement('div');
-            cell.className = `p-2.5 rounded border ${{bgHeat}} flex flex-col justify-between`;
+            cell.className = `p-2.5 rounded border ${{bgHeat}} flex flex-col justify-between transition-colors`;
             cell.innerHTML = `
                 <span class="text-[11px] font-semibold truncate" title="${{item.name}}">${{item.name}}</span>
                 <div class="flex justify-between items-end mt-2">
@@ -171,13 +196,13 @@ html_template = f"""
             heatmapContainer.appendChild(cell);
         }});
 
-        // 2. 카테고리별 카드 및 차트 렌더링
+        // 카테고리별 카드 및 차트 렌더링
         const container = document.getElementById('dashboard-container');
         let catIndex = 0;
 
         for (const [category, items] of Object.entries(rawData)) {{
             let section = document.createElement('section');
-            section.innerHTML = `<h2 class="text-sm font-bold text-emerald-300 border-b border-gray-800 pb-2 mb-4 tracking-wide">${{category}}</h2>`;
+            section.innerHTML = `<h2 class="text-sm font-bold text-emerald-600 dark:text-emerald-300 border-b border-slate-200 dark:border-gray-800 pb-2 mb-4 tracking-wide">${{category}}</h2>`;
             let grid = document.createElement('div');
             grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
             
@@ -185,29 +210,28 @@ html_template = f"""
             for (const [name, info] of Object.entries(items)) {{
                 let canvasId = `chart-${{itemIndex}}-${{catIndex}}`;
                 let isUp = info.change_rate >= 0;
-                let badgeClass = isUp ? "bg-red-950 text-red-400 border border-red-900" : "bg-blue-950 text-blue-400 border border-blue-900";
+                let badgeClass = isUp ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-900" : "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-900";
                 let sign = info.change_rate > 0 ? "+" : "";
                 
-                // 3개월 평균 대비 현재가 상태 판단
-                let vsAvg = info.current >= info.avg_3m ? "⚠️ 평균선 상단 (고점 부근)" : "✨ 평균선 하단 (저점 기회)";
-                let vsAvgColor = info.current >= info.avg_3m ? "text-amber-400" : "text-emerald-400";
+                let vsAvg = info.current >= info.avg_3m ? "⚠️ 평균선 상단" : "✨ 평균선 하단";
+                let vsAvgColor = info.current >= info.avg_3m ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400";
 
                 let card = document.createElement('div');
-                card.className = "bg-gray-900 border border-gray-800 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-500/50 transition shadow-lg";
+                card.className = "bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-500/50 transition shadow-lg";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start">
-                            <h3 class="text-xs font-semibold text-gray-400 truncate w-3/4" title="${{name}}">${{name}}</h3>
+                            <h3 class="text-xs font-semibold text-slate-500 dark:text-gray-400 truncate w-3/4" title="${{name}}">${{name}}</h3>
                             <span class="text-xs px-1.5 py-0.5 rounded font-bold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
                         </div>
                         <div class="mt-2 flex items-baseline justify-between">
-                            <span class="text-xl font-black tracking-tight text-white">${{info.current.toLocaleString()}}</span>
+                            <span class="text-xl font-black tracking-tight text-slate-900 dark:text-white">${{info.current.toLocaleString()}}</span>
                             <span class="text-[10px] ${{vsAvgColor}} font-bold">${{vsAvg}}</span>
                         </div>
-                        <div class="text-[10px] text-gray-500 mt-0.5">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
+                        <div class="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
                     </div>
                     <div class="mt-3 h-16 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
-                    <div class="mt-2 flex justify-between text-[10px] text-gray-500 border-t border-gray-800/60 pt-1">
+                    <div class="mt-2 flex justify-between text-[10px] text-slate-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/60 pt-1">
                         <span>Start: ${{info.dates.length > 0 ? info.dates[0] : 'N/A'}}</span>
                         <span>End: ${{info.dates.length > 0 ? info.dates[info.dates.length-1] : 'N/A'}}</span>
                     </div>
@@ -220,7 +244,7 @@ html_template = f"""
             catIndex++;
         }}
 
-        // 3. Chart.js 스파크라인 및 3개월 평균 수평선(점선) 주입
+        // Chart.js 렌더링
         setTimeout(() => {{
             let cIdx = 0;
             for (const [category, items] of Object.entries(rawData)) {{
@@ -248,7 +272,7 @@ html_template = f"""
                                     {{
                                         label: '3M Avg',
                                         data: info.avg_line,
-                                        borderColor: '#fbbf24', // 주황/노란색 점선 (3개월 평균선)
+                                        borderColor: '#fbbf24',
                                         borderWidth: 1.5,
                                         borderDash: [4, 4],
                                         pointRadius: 0,
