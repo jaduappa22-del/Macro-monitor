@@ -9,6 +9,30 @@ st.set_page_config(
     layout="wide",
 )
 
+# 세션 상태에 실무 담당자 인사이트 아카이브 초기화
+if "procurement_insights" not in st.session_state:
+  st.session_state.procurement_insights = [
+      {
+          "id": 1,
+          "author": "김구매 수석",
+          "date": "2026-06-01",
+          "content": (
+              "구리 가격이 3개월 평균선 하단에 위치해 있으나, 하반기 인프라"
+              " 수요 회복 가능성을 고려해 주요 전선 부품은 분할 매수 및 장기 계약"
+              " 검토 필요."
+          ),
+      },
+      {
+          "id": 2,
+          "author": "이전략 매니저",
+          "date": "2026-06-03",
+          "content": (
+              "원/달러 환율 1,350원 공방 지속. 수입 대금 결제일 도래 시 분할"
+              " 환전 전략 적용하여 리스크 최소화할 것."
+          ),
+      },
+  ]
+
 
 def fetch_market_data():
   categories = {
@@ -113,6 +137,13 @@ if fx_val >= 1380 and copper_chg >= 5.0:
   stress_status = "고위기 / 비상 대응 (CRITICAL)"
   stress_color = "text-red-500 bg-red-950/60 border-red-800"
 
+# 파이썬 스트림릿 영역에서의 인사이트 추가/삭제 처리
+st.markdown("""
+    <style>
+    .insight-card { background-color: #1e293b; border: 1px solid #334155; padding: 15px; border-radius: 12px; margin-bottom: 10px; color: #f8fafc; }
+    </style>
+""", unsafe_allow_html=True)
+
 html_template = f"""
 <!DOCTYPE html>
 <html lang="ko" class="dark">
@@ -121,9 +152,7 @@ html_template = f"""
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        tailwind.config = {{
-            darkMode: 'class',
-        }}
+        tailwind.config = {{ darkMode: 'class' }};
         function toggleTheme() {{
             const html = document.documentElement;
             if (html.classList.contains('dark')) {{
@@ -254,16 +283,15 @@ html_template = f"""
     </div>
 
     <!-- 카테고리별 완벽 분리된 구역 덱 -->
-    <div class="space-y-12 mb-16" id="dashboard-container"></div>
+    <div class="space-y-12 mb-12" id="dashboard-container"></div>
 
-    <!-- [NEW] 최하단: 매크로 지표 학습 센터 & 상관관계 분석 가이드 -->
-    <div class="bg-white dark:bg-gray-900 border-2 border-emerald-500/40 rounded-3xl p-8 shadow-2xl transition-colors">
+    <!-- 최하단: 매크로 학습 센터 & 상관관계 분석 가이드 -->
+    <div class="bg-white dark:bg-gray-900 border-2 border-emerald-500/40 rounded-3xl p-8 shadow-2xl transition-colors mb-12">
         <div class="border-b-2 border-slate-200 dark:border-gray-800 pb-4 mb-6">
             <h2 class="text-2xl font-black text-emerald-600 dark:text-emerald-300 tracking-wide">📚 MACRO LEARNING CENTER & CORRELATION MAP</h2>
             <p class="text-xs text-slate-500 dark:text-gray-400 mt-1 font-bold">자재구매팀 실무 역량 강화를 위한 거시경제 지표 가이드 및 상관관계 분석</p>
         </div>
 
-        <!-- 1. 지표별 상세 가이드 카드 그리드 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
                 <span class="text-xs font-black px-2 py-1 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400">🇺🇸 US 10Y Treasury (국채 금리)</span>
@@ -315,7 +343,6 @@ html_template = f"""
             </div>
         </div>
 
-        <!-- 2. 지표 간 상관관계도 (Correlation Matrix / Flow Map) -->
         <div class="bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-6 rounded-2xl">
             <h3 class="text-base font-black text-slate-900 dark:text-white mb-4">🔗 거시경제 지표 간 상관관계 메커니즘 (Macro Correlation Flow)</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -334,142 +361,164 @@ html_template = f"""
             </div>
         </div>
     </div>
-
-    <script>
-        const rawData = {data_json};
-        const summaryData = {summary_json};
-        
-        const heatmapContainer = document.getElementById('heatmap-container');
-        summaryData.forEach(item => {{
-            let isUp = item.change_rate >= 0;
-            let bgHeat = isUp ? 'bg-red-100 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200';
-            let sign = isUp ? '+' : '';
-            
-            let cell = document.createElement('div');
-            cell.className = `p-4 rounded-xl border-2 ${{bgHeat}} flex flex-col justify-between transition-colors shadow-md`;
-            cell.innerHTML = `
-                <span class="text-xs font-black truncate" title="${{item.name}}">${{item.name}}</span>
-                <div class="flex justify-between items-end mt-3">
-                    <span class="text-sm font-extrabold">${{item.current.toLocaleString()}}</span>
-                    <span class="text-xs font-black px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">${{sign}}${{item.change_rate}}%</span>
-                </div>
-            `;
-            heatmapContainer.appendChild(cell);
-        }});
-
-        const container = document.getElementById('dashboard-container');
-        let catIndex = 0;
-
-        for (const [category, items] of Object.entries(rawData)) {{
-            let sectionCard = document.createElement('div');
-            sectionCard.className = "bg-white dark:bg-gray-900 border-2 border-slate-300 dark:border-gray-800 rounded-3xl p-6 shadow-xl transition-colors";
-            
-            let sectionHeader = document.createElement('div');
-            sectionHeader.className = "border-b-2 border-slate-200 dark:border-gray-800 pb-4 mb-6";
-            sectionHeader.innerHTML = `<h2 class="text-xl font-black text-emerald-600 dark:text-emerald-300 tracking-wide">${{category}}</h2>`;
-            sectionCard.appendChild(sectionHeader);
-
-            let grid = document.createElement('div');
-            grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
-            
-            let itemIndex = 0;
-            for (const [name, info] of Object.entries(items)) {{
-                let canvasId = `chart-${{itemIndex}}-${{catIndex}}`;
-                let isUp = info.change_rate >= 0;
-                let badgeClass = isUp ? "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-400 border border-red-300 dark:border-red-900" : "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-400 border border-blue-300 dark:border-blue-900";
-                let sign = info.change_rate > 0 ? "+" : "";
-                
-                let vsAvg = info.current >= info.avg_3m ? "⚠️ 평균선 상단" : "✨ 평균선 하단";
-                let vsAvgColor = info.current >= info.avg_3m ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-emerald-600 dark:text-emerald-400 font-extrabold";
-
-                let card = document.createElement('div');
-                card.className = "bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-800 p-5 rounded-2xl flex flex-col justify-between hover:border-emerald-500 transition shadow-md";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start">
-                            <h3 class="text-xs font-bold text-slate-700 dark:text-gray-300 truncate w-3/4" title="${{name}}">${{name}}</h3>
-                            <span class="text-xs px-2 py-0.5 rounded-md font-extrabold ${{badgeClass}}">${{sign}}${{info.change_rate}}%</span>
-                        </div>
-                        <div class="mt-3 flex items-baseline justify-between">
-                            <span class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">${{info.current.toLocaleString()}}</span>
-                            <span class="text-xs ${{vsAvgColor}}">${{vsAvg}}</span>
-                        </div>
-                        <div class="text-xs text-slate-500 dark:text-gray-400 mt-1 font-semibold">3M Avg: ${{info.avg_3m.toLocaleString()}}</div>
-                    </div>
-                    <div class="mt-4 h-20 w-full relative"><canvas id="${{canvasId}}"></canvas></div>
-                    <div class="mt-3 flex justify-between text-xs text-slate-500 dark:text-gray-400 border-t border-slate-200 dark:border-gray-800/80 pt-2 font-medium">
-                        <span>Start: ${{info.dates.length > 0 ? info.dates[0] : 'N/A'}}</span>
-                        <span>End: ${{info.dates.length > 0 ? info.dates[info.dates.length-1] : 'N/A'}}</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-                itemIndex++;
-            }}
-            sectionCard.appendChild(grid);
-            container.appendChild(sectionCard);
-            catIndex++;
-        }}
-
-        setTimeout(() => {{
-            let cIdx = 0;
-            for (const [category, items] of Object.entries(rawData)) {{
-                let iIdx = 0;
-                for (const [name, info] of Object.entries(items)) {{
-                    let canvasId = `chart-${{iIdx}}-${{cIdx}}`;
-                    let ctx = document.getElementById(canvasId);
-                    if (ctx && info.sparkline && info.sparkline.length > 0) {{
-                        let isUp = info.change_rate >= 0;
-                        new Chart(ctx.getContext('2d'), {{
-                            type: 'line',
-                            data: {{
-                                labels: info.dates,
-                                datasets: [
-                                    {{
-                                        label: 'Price',
-                                        data: info.sparkline,
-                                        borderColor: isUp ? '#f87171' : '#60a5fa',
-                                        borderWidth: 2.5,
-                                        pointRadius: 0,
-                                        pointHoverRadius: 5,
-                                        tension: 0.1,
-                                        fill: false
-                                    }},
-                                    {{
-                                        label: '3M Avg',
-                                        data: info.avg_line,
-                                        borderColor: '#fbbf24',
-                                        borderWidth: 2,
-                                        borderDash: [5, 5],
-                                        pointRadius: 0,
-                                        fill: false
-                                    }}
-                                ]
-                            }},
-                            options: {{
-                                responsive: true, maintainAspectRatio: false,
-                                plugins: {{
-                                    legend: {{ display: false }},
-                                    tooltip: {{
-                                        enabled: true, mode: 'index', intersect: false,
-                                        callbacks: {{
-                                            title: ctx => ctx[0].label,
-                                            label: ctx => ` ${{ctx.dataset.label}}: ${{ctx.raw.toLocaleString()}}`
-                                        }}
-                                    }}
-                                }},
-                                scales: {{ x: {{ display: false }}, y: {{ display: false }} }},
-                                interaction: {{ mode: 'nearest', axis: 'x', intersect: false }}
-                            }}
-                        }});
-                    }}
-                    iIdx++;
-                }}
-                cIdx++;
-            }}
-        }}, 400);
-    </script>
-</body>
-</html>
 """
 
-st.components.v1.html(html_template, height=3100, scrolling=True)
+st.components.v1.html(html_template, height=2700, scrolling=True)
+
+# ── [가장 하단] 실무 담당자 인사이트 관리 섹션 (스트림릿 네이티브 폼 UI) ──
+st.markdown("---")
+st.markdown(
+    "### 📝 실무 담당자 마켓 인사이트 아카이브 (Team Insight & Memo Board)"
+)
+st.markdown(
+    "구매팀 팀원들이 직접 인사이트와 협상 팁을 기록하고 관리하는 공간입니다."
+)
+
+# 1. 인사이트 등록 폼
+with st.form("insight_form", clear_on_submit=True):
+  col_in1, col_in2 = st.columns([1, 4])
+  with col_in1:
+    author_input = st.text_input("작성자명", placeholder="예: 김구매 수석")
+  with col_in2:
+    content_input = st.text_input(
+        "인사이트 및 협상 팁 내용",
+        placeholder=(
+            "예: 특정 원자재 단가 인상 건 관련 3개월 평균선 기준 방어 논리 공유"
+        ),
+    )
+
+  submitted = st.form_submit_button("✍️ 인사이트 등록하기")
+  if submitted:
+    if author_input and content_input:
+      new_id = (
+          max([item["id"] for item in st.session_state.procurement_insights])
+          + 1
+          if st.session_state.procurement_insights
+          else 1
+      )
+      current_date = datetime.now().strftime("%Y-%m-%d")
+      st.session_state.procurement_insights.append({
+          "id": new_id,
+          "author": author_input,
+          "date": current_date,
+          "content": content_input,
+      })
+      st.success("인사이트가 성공적으로 등록되었습니다!")
+      st.rerun()
+    else:
+      st.warning("작성자와 내용을 모두 입력해 주세요.")
+
+# 2. 등록된 인사이트 리스트 카드 출력 및 삭제 기능
+st.markdown("#### 📋 등록된 팀 내 인사이트 목록")
+
+if not st.session_state.procurement_insights:
+  st.info("등록된 인사이트가 없습니다. 첫 번째 의견을 남겨주세요!")
+else:
+  for item in st.session_state.procurement_insights:
+    with st.container():
+      st.markdown(
+          f"""
+                <div class="insight-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: bold; color: #38bdf8; font-size: 14px;">👤 {item['author']}</span>
+                        <span style="color: #94a3b8; font-size: 12px;">📅 {item['date']}</span>
+                    </div>
+                    <div style="font-size: 14px; color: #f1f5f9; line-height: 1.5;">{item['content']}</div>
+                </div>
+                """,
+          unsafe_allow_html=True,
+      )
+      # 삭제 버튼
+      if st.button(f"삭제 (ID: {item['id']})", key=f"del_{item['id']}"):
+        st.session_state.procurement_insights = [
+            i for i in st.session_state.procurement_insights if i["id"] != item["id"]
+        ]
+        st.success(f"ID {item['id']} 인사이트가 삭제되었습니다.")
+        st.rerun()
+
+# JS 차트 렌더링용 스크립트 주입
+chart_script_html = f"""
+<script>
+    setTimeout(() => {{
+        const rawData = {data_json};
+        let cIdx = 0;
+        for (const [category, items] of Object.entries(rawData)) {{
+            let iIdx = 0;
+            for (const [name, info] of Object.entries(items)) {{
+                let canvasId = `chart-${{iIdx}}-${{cIdx}}`;
+                let ctx = document.getElementById(canvasId);
+                if (ctx && info.sparkline && info.sparkline.length > 0) {{
+                    let isUp = info.change_rate >= 0;
+                    new Chart(ctx.getContext('2d'), {{
+                        type: 'line',
+                        data: {{
+                            labels: info.dates,
+                            datasets: [
+                                {{
+                                    label: 'Price',
+                                    data: info.sparkline,
+                                    borderColor: isUp ? '#f87171' : '#60a5fa',
+                                    borderWidth: 2.5,
+                                    pointRadius: 0,
+                                    pointHoverRadius: 5,
+                                    tension: 0.1,
+                                    fill: false
+                                }},
+                                {{
+                                    label: '3M Avg',
+                                    data: info.avg_line,
+                                    borderColor: '#fbbf24',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    fill: false
+                                }}
+                            ]
+                        }},
+                        options: {{
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {{
+                                legend: {{ display: false }},
+                                tooltip: {{
+                                    enabled: true, mode: 'index', intersect: false,
+                                    callbacks: {{
+                                        title: ctx => ctx[0].label,
+                                        label: ctx => ` ${{ctx.dataset.label}}: ${{ctx.raw.toLocaleString()}}`
+                                    }}
+                                }}
+                            }},
+                            scales: {{ x: {{ display: false }}, y: {{ display: false }} }},
+                            interaction: {{ mode: 'nearest', axis: 'x', intersect: false }}
+                        }}
+                    }});
+                }}
+                iIdx++;
+            }}
+            cIdx++;
+        }}
+
+        // 히트맵 렌더링
+        const summaryData = {summary_json};
+        const heatmapContainer = document.getElementById('heatmap-container');
+        if (heatmapContainer && heatmapContainer.children.length === 0) {{
+            summaryData.forEach(item => {{
+                let isUp = item.change_rate >= 0;
+                let bgHeat = isUp ? 'bg-red-100 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200';
+                let sign = isUp ? '+' : '';
+                
+                let cell = document.createElement('div');
+                cell.className = `p-4 rounded-xl border-2 ${{bgHeat}} flex flex-col justify-between transition-colors shadow-md`;
+                cell.innerHTML = `
+                    <span class="text-xs font-black truncate" title="${{item.name}}">${{item.name}}</span>
+                    <div class="flex justify-between items-end mt-3">
+                        <span class="text-sm font-extrabold">${{item.current.toLocaleString()}}</span>
+                        <span class="text-xs font-black px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">${{sign}}${{item.change_rate}}%</span>
+                    </div>
+                `;
+                heatmapContainer.appendChild(cell);
+            }});
+        }}
+    }}, 400);
+</script>
+"""
+st.components.v1.html(chart_script_html, height=1, scrolling=False)
